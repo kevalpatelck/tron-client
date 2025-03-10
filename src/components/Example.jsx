@@ -1,56 +1,68 @@
 import { useState } from "react";
-import axios from "axios";
 
-const MyForm = () => {
-    const [formData, setFormData] = useState({
-        UID: "",
-        userName: ""
-    });
+export default function TableWithPopup() {
+  const [openRow, setOpenRow] = useState(null);
 
-    // Handle input changes
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+  const togglePopup = (rowId) => {
+    setOpenRow(openRow === rowId ? null : rowId);
+  };
 
-    // Handle form submission
-    const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevents page reload
+  return (
+    <div className="overflow-x-auto max-h-64 border rounded-lg shadow p-4">
+      <table className="min-w-full border-collapse">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="px-4 py-2 border">#</th>
+            <th className="px-4 py-2 border">Name</th>
+            <th className="px-4 py-2 border">Score</th>
+            <th className="px-4 py-2 border">View</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white">
+          {[
+            { id: 1, name: "John", score: 95 },
+            { id: 2, name: "Doe", score: 88 },
+            { id: 3, name: "Smith", score: 76 },
+          ].map((row) => (
+            <tr key={row.id} className="relative">
+              <td className="px-4 py-2 border">{row.id}</td>
+              <td className="px-4 py-2 border">{row.name}</td>
+              <td className="px-4 py-2 border">{row.score}</td>
+              <td className="px-4 py-2 border text-center relative">
+                {/* Eye Icon */}
+                <button onClick={() => togglePopup(row.id)}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    className="w-6 h-6 text-blue-500 cursor-pointer"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 4.5c-4.75 0-8.5 4-8.5 7.5s3.75 7.5 8.5 7.5 8.5-4 8.5-7.5-3.75-7.5-8.5-7.5z"
+                    ></path>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9a3 3 0 100 6 3 3 0 000-6z"
+                    ></path>
+                  </svg>
+                </button>
 
-        try {
-            const response = await axios.post("YOUR_API_URL", formData);
-            console.log("Response:", response.data);
-            alert("Data submitted successfully!");
-        } catch (error) {
-            console.error("Error posting data:", error);
-            alert("Failed to submit data.");
-        }
-    };
-
-    return (
-        <form onSubmit={handleSubmit}>
-            <div>
-                <label>UID:</label>
-                <input
-                    type="text"
-                    name="UID"
-                    value={formData.UID}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
-            <div>
-                <label>User Name:</label>
-                <input
-                    type="text"
-                    name="userName"
-                    value={formData.userName}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
-            <button type="submit">Submit</button>
-        </form>
-    );
-};
-
-export default MyForm;
+                {/* Popup Box */}
+                {openRow === row.id && (
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 bg-black text-white text-sm rounded-lg px-3 py-2 shadow-lg">
+                    Viewing details for <b>{row.name}</b>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

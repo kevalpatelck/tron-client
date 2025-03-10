@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
-import { Dialog } from "@headlessui/react";
-
+// import { Dialog } from "@headlessui/react";
+// import { ArrowRight, Heart, Trash } from 'react-bootstrap-icons';
 
 
 const WalletDataDisplay = () => {
@@ -11,7 +11,7 @@ const WalletDataDisplay = () => {
     UID: "",
     userName: ""
   });
-  
+  const [openRow, setOpenRow] = useState(null);
   const [isHistoryOpen, setisHistoryOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -21,16 +21,17 @@ const WalletDataDisplay = () => {
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
-
+  const [highlightId, setHighlightId] = useState(null); // Store newly created ID
+  console.log("highlightId", highlightId)
   const openForm = () => {
     setIsFormOpen(true);
   };
-  const cancelForm=()=>{
+  const cancelForm = () => {
     setIsOpen(false)
     setisHistoryOpen(false)
   }
 
-  const handleConnectTron = async () => {
+  const handleConnectTron = async (skipWalletToast = false) => {
     if (window.tronWeb && window.tronWeb.ready) {
       // Connect to the Tron wallet
       const walletAddress = window.tronWeb.defaultAddress.base58;
@@ -44,22 +45,22 @@ const WalletDataDisplay = () => {
           setmainBalance(balanceInTrx);
           console.log("Balance in Sun:", balanceInSun);
           console.log("Balance in TRX:", balanceInTrx);
-
-          
         }
 
-        toast.success("Tron Wallet Connected Successfully", {
-          position: "top-right",
-          autoClose: 1500,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          theme: "colored",
-      });
+        if (skipWalletToast) {
+          toast.success("Tron Wallet Connected Successfully", {
+            position: "top-right",
+            autoClose: 1500,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: "colored",
+          });
+        }
 
 
-        const response = await fetch(`http://localhost:4444/api/tron/get-sub?address=${walletAddress}`);
+        const response = await fetch(`http://localhost:4444/api/tron/get-sub-id?address=${walletAddress}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -70,7 +71,7 @@ const WalletDataDisplay = () => {
         // Validate if subAccountDetails exists and is not empty
         if (data.data && Array.isArray(data.data.SubAccounts) && data.data.SubAccounts.length > 0) {
           const subAccount = data.data.SubAccounts[0]; // Get the first sub-account
-          console.log(subAccount.UID, "subAccount.UID");
+          console.log(subAccount, "subAccount.UID");
           // window.location.reload()
           // Set subAccount details in the state
           setSubAccountDetails(data.data.SubAccounts);
@@ -83,7 +84,7 @@ const WalletDataDisplay = () => {
           console.error("No subAccountDetails found in the API response.");
           setSubAccountDetails([])
 
-          setTimeout(() => { 
+          setTimeout(() => {
             toast.error("No subAccounts found", {
               position: "top-right",
               autoClose: 1500,
@@ -92,9 +93,9 @@ const WalletDataDisplay = () => {
               pauseOnHover: true,
               draggable: true,
               theme: "colored",
-          });
-          },1000)
-         
+            });
+          }, 1000)
+
         }
       } catch (error) {
         console.error("Error:", error);
@@ -122,17 +123,38 @@ const WalletDataDisplay = () => {
     e.preventDefault();
     try {
       const response = await axios.post("http://localhost:4444/api/tron/create-sub", formData);
-      console.log("Response", response.data);
+      console.log("Response", (response?.data));
       // alert("Data submitted successfully");
-      toast.success("Sub Account Created Successfully", {
-        position: "top-right",
-        autoClose: 1500,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-    });
+      setHighlightId(response?.data?.data?.subAccount?.UID); // Highlight the newly created sub-account
+
+      if (response?.data?.success) {
+        toast.success("Account Created Successfully", {
+          value: "Account Created Successfully",
+          position: "top-right",
+          autoClose: 1500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+        });
+        removeHighlight()
+      }
+      else {
+        toast.error("Account Alredy exist", {
+          value: "Account Alredy exist",
+          position: "top-right",
+          autoClose: 1500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+        });
+      }
+      removeHighlight()
+
+
     } catch (error) {
       console.error("error in posting data:", error);
       alert("error in posting data");
@@ -154,6 +176,18 @@ const WalletDataDisplay = () => {
     { id: 2, amount: "$250", date: "2025-03-06", status: "Pending" },
     { id: 3, amount: "$75", date: "2025-03-05", status: "Completed" },
   ];
+
+
+  const togglePopup = (rowId) => {
+    setOpenRow(openRow === rowId ? null : rowId);
+  };
+
+  const removeHighlight = () => {
+    setTimeout(() => {
+      setHighlightId(null)
+    }, 2000);
+  }
+
 
   return (
     //main page content
@@ -210,24 +244,24 @@ const WalletDataDisplay = () => {
           </p>
         </div>
         <button
-  onClick={() => setisHistoryOpen(true)}
-  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 flex items-center gap-2"
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={2}
-    stroke="currentColor"
-    className="w-5 h-5"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M12 8v4l3 3m6-3a9 9 0 11-9-9"
-    />
-  </svg>
-</button>
+          onClick={() => setisHistoryOpen(true)}
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 flex items-center gap-2"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-5 h-5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 8v4l3 3m6-3a9 9 0 11-9-9"
+            />
+          </svg>
+        </button>
 
       </div>
 
@@ -261,10 +295,10 @@ const WalletDataDisplay = () => {
 
           {/* Buttons */}
           <div className="flex space-x-4 mt-4">
-         
+
 
             <button
-               onClick={()=> cancelForm()}
+              onClick={() => cancelForm()}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
             >
               Close
@@ -282,26 +316,39 @@ const WalletDataDisplay = () => {
               <th className="py-3 px-6 text-left font-semibold text-gray-700">Name</th>
               <th className="py-3 px-6 text-left font-semibold text-gray-700">Wallet Address</th>
               <th className="py-3 px-6 text-left font-semibold text-gray-700">Balance</th>
+              <th className="py-3 px-6 text-left font-semibold text-gray-700">Import</th>
               <th className="py-3 px-6 text-left font-semibold text-gray-700">Transfer To Main</th>
-              
+
+
             </tr>
           </thead>
           <tbody>
             {subAccountDetails.map((account) => (
-              <tr className="hover:bg-gray-50" key={account.id}>
+              <tr key={account.id} className={`border ${highlightId === account?.UID ? "bg-yellow-200" : ""}`}>
                 <td className="py-4 px-6 border-b border-gray-200">{account.UID}</td>
                 <td className="py-4 px-6 border-b border-gray-200">{account.userName}</td>
                 <td className="py-4 px-6 border-b border-gray-200">{account.address}</td>
                 <td className="py-4 px-6 border-b border-gray-200">{account.balance}</td>
+                <td className="py-4 px-6 border-b border-gray-200" >
+                  <button onClick={() => togglePopup(account.id)}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                      <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+                      <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
+                    </svg>
+                    <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-32 bg-black text-white text-xs rounded-lg px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      View Details
+                    </div>
+                  </button>
+                </td>
                 <td className="py-4 px-6 border-b border-gray-200">
-                <td className=" border-gray-300 p-2 text-center">
-              <button
-                onClick={() => setIsOpen(true)}
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
-              >
-                Add
-              </button>
-            </td>
+                  <td className=" border-gray-300 p-2 text-center">
+                    <button
+                      onClick={() => setIsOpen(true)}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
+                    >
+                      Add
+                    </button>
+                  </td>
                 </td>
 
               </tr>
@@ -309,6 +356,14 @@ const WalletDataDisplay = () => {
           </tbody>
         </table>
       </div>
+
+      {/* 
+{openRow ===account.id &&(
+  <div className='absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 bg-black text-white text-sm rounded-lg px-3 py-2 shadow-lg'
+  >detais of<b>{account.}</b>
+</div>
+)} */}
+
 
       {isOpen && (
         <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-lg shadow-lg w-80 border border-gray-300">
@@ -320,22 +375,22 @@ const WalletDataDisplay = () => {
             onChange={(e) => setInputValue(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-lg mb-4"
           />
-      <div className="flex space-x-4 w-full">
-  <button
-    onClick={() => cancelForm()}
-    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
-  >
-    Transfer to Main
-  </button>
+          <div className="flex space-x-4 w-full">
+            <button
+              onClick={() => cancelForm()}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+            >
+              Transfer to Main
+            </button>
 
-  <button
-    onClick={()=> cancelForm()}
-    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
-  >
-    Cancel
-  </button>
-</div>
- 
+            <button
+              onClick={() => cancelForm()}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+            >
+              Cancel
+            </button>
+          </div>
+
         </div>
       )}
 
