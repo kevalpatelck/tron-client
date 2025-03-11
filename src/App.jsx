@@ -7,7 +7,7 @@ import { ToastContainer } from "react-toastify";
 // import ThemeToggle from './components/ThemeToggle'
 // import Button from './components/Button'
 // import Transferhis from './components/Transferhis'
-// import Example from './components/Example'
+import Example from './components/Example'
 
 function App() {
   // const [count, setCount] = useState(0)

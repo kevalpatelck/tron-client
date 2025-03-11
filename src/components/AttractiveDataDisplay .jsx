@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { motion } from "framer-motion";
 import "react-toastify/dist/ReactToastify.css";
 // import { Dialog } from "@headlessui/react";
 // import { ArrowRight, Heart, Trash } from 'react-bootstrap-icons';
@@ -11,6 +12,8 @@ const WalletDataDisplay = () => {
     UID: "",
     userName: ""
   });
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [openRow, setOpenRow] = useState(null);
   const [isHistoryOpen, setisHistoryOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -30,6 +33,22 @@ const WalletDataDisplay = () => {
     setIsOpen(false)
     setisHistoryOpen(false)
   }
+
+
+
+
+  const togglePopup = (account) => {
+    setSelectedAccount(account);
+    setShowPrivateKey(false); // Reset private key visibility
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(selectedAccount?.privateKey);
+    alert("Private Key Copied!");
+  };
+
+
+  console.log("selectedAccount=====>", selectedAccount);
 
   const handleConnectTron = async (skipWalletToast = false) => {
     if (window.tronWeb && window.tronWeb.ready) {
@@ -178,9 +197,6 @@ const WalletDataDisplay = () => {
   ];
 
 
-  const togglePopup = (rowId) => {
-    setOpenRow(openRow === rowId ? null : rowId);
-  };
 
   const removeHighlight = () => {
     setTimeout(() => {
@@ -188,10 +204,11 @@ const WalletDataDisplay = () => {
     }, 2000);
   }
 
+  // console.log(account.privateKey);
 
   return (
     //main page content
-    <div className="flex flex-col h-screen">
+    <div className={`flex flex-col h-screen`}>
       {/* Top Bar with Login/Logout */}
       <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Wallet Dashboard</h1>
@@ -329,13 +346,10 @@ const WalletDataDisplay = () => {
                 <td className="py-4 px-6 border-b border-gray-200">{account.userName}</td>
                 <td className="py-4 px-6 border-b border-gray-200">{account.address}</td>
                 <td className="py-4 px-6 border-b border-gray-200">{account.balance}</td>
-                <td className="py-4 px-6 border-b border-gray-200" >
-                  <button onClick={() => togglePopup(account.id)}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                      <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                      <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                    </svg>
-                    <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-32 bg-black text-white text-xs rounded-lg px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <td className="py-4 px-6 border-b border-gray-200">
+                  <button onClick={() => togglePopup(account)} className="relative group">
+                  👁️
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-32 bg-black text-white text-xs rounded-lg px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       View Details
                     </div>
                   </button>
@@ -347,6 +361,7 @@ const WalletDataDisplay = () => {
                       className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
                     >
                       Add
+
                     </button>
                   </td>
                 </td>
@@ -357,12 +372,59 @@ const WalletDataDisplay = () => {
         </table>
       </div>
 
-      {/* 
+      {/*       
 {openRow ===account.id &&(
   <div className='absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 bg-black text-white text-sm rounded-lg px-3 py-2 shadow-lg'
-  >detais of<b>{account.}</b>
+  >detais of<b>{account.privateKey}</b>
 </div>
 )} */}
+
+{selectedAccount && (
+  <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-lg">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="bg-white p-5 rounded-xl shadow-xl w-80"
+    >
+      <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
+        🔒 Private Key
+      </h2>
+
+      {/* Hidden Private Key */}
+      <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg">
+        <span className="font-mono text-sm truncate">
+          {showPrivateKey
+            ? selectedAccount.privateKey
+            : "•".repeat(selectedAccount.privateKey.length)}
+        </span>
+        <button
+          onClick={() => setShowPrivateKey(!showPrivateKey)}
+          className="ml-2 text-blue-600 hover:text-blue-800 text-sm"
+        >
+          {/* {showPrivateKey ? "Hide" : "Show"} */}
+        </button>
+      </div>
+
+      {/* Copy Button */}
+      <button
+        onClick={copyToClipboard}
+        className="mt-4 w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:opacity-90 text-white py-2 px-4 rounded-lg transition-all duration-200"
+      >
+        📋 Copy Private Key
+      </button>
+
+      {/* Close Button */}
+      <button
+        onClick={() => setSelectedAccount(null)}
+        className="mt-2 w-full bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-all duration-200"
+      >
+        ✖ Close
+      </button>
+    </motion.div>
+  </div>
+)}
 
 
       {isOpen && (
@@ -448,6 +510,11 @@ const WalletDataDisplay = () => {
               </button>
             </div>
           </form>
+
+
+
+
+
         </div>
       )}
     </div>
