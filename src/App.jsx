@@ -8,6 +8,7 @@ import { ToastContainer } from "react-toastify";
 // import Button from './components/Button'
 // import Transferhis from './components/Transferhis'
 import Example from './components/Example'
+import Sliderimage from './slider/Sliderimage';
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -18,6 +19,7 @@ function App() {
 <ToastContainer/>
 {/* <ThemeToggle/> */}
 <AttractiveDataDisplay/>
+{/* <Sliderimage/> */}
 {/* <Example/> */}
 {/* <Transferhis/> */}
 {/* <Button/> */}

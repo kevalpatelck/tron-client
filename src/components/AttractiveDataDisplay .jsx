@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { motion } from "framer-motion";
 import "react-toastify/dist/ReactToastify.css";
-// import { Dialog } from "@headlessui/react";
-// import { ArrowRight, Heart, Trash } from 'react-bootstrap-icons';
+import HistoryModel from '../common/HistoryModel';
+import TransactionHistoryModal from '../common/TransactionHistoryModal';
 
 
 const WalletDataDisplay = () => {
@@ -14,7 +14,6 @@ const WalletDataDisplay = () => {
   });
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [openRow, setOpenRow] = useState(null);
   const [isHistoryOpen, setisHistoryOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -24,7 +23,46 @@ const WalletDataDisplay = () => {
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [highlightId, setHighlightId] = useState(null); // Store newly created ID
+  const [highlightId, setHighlightId] = useState(null);
+  const [show, setShow] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState("");
+
+  // const[]=useState(false)
+
+  const handleViewTransactions = (wallet) => {
+    setSelectedWallet(wallet);
+    setShowTransactionModal(true);
+    console.log("walletADDRESS=======>", wallet);
+
+  };
+
+
+  // the 2 second top logic
+
+
+  const rowRefs = useRef({});
+
+  useEffect(() => {
+    if (highlightId && rowRefs.current[highlightId]) {
+      rowRefs.current[highlightId].scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      // Remove highlight after 2 seconds
+      const timer = setTimeout(() => {
+        setHighlightId(null);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [highlightId]);
+
+
+
+
+  // Store newly created ID
   console.log("highlightId", highlightId)
   const openForm = () => {
     setIsFormOpen(true);
@@ -44,7 +82,7 @@ const WalletDataDisplay = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(selectedAccount?.privateKey);
-    alert("Private Key Copied!");
+    // alert("Private Key Copied!");
   };
 
 
@@ -64,6 +102,7 @@ const WalletDataDisplay = () => {
           setmainBalance(balanceInTrx);
           console.log("Balance in Sun:", balanceInSun);
           console.log("Balance in TRX:", balanceInTrx);
+
         }
 
         if (skipWalletToast) {
@@ -91,9 +130,13 @@ const WalletDataDisplay = () => {
         if (data.data && Array.isArray(data.data.SubAccounts) && data.data.SubAccounts.length > 0) {
           const subAccount = data.data.SubAccounts[0]; // Get the first sub-account
           console.log(subAccount, "subAccount.UID");
+          console.log("subAccountDetails", data.data.SubAccounts);
+          
           // window.location.reload()
           // Set subAccount details in the state
           setSubAccountDetails(data.data.SubAccounts);
+          // console.log("accountId=====>",accountId);
+
           // Pre-fill the form with the fetched UID
           setFormData({
             UID: subAccount.UID, // Set UID from the fetched data
@@ -206,6 +249,10 @@ const WalletDataDisplay = () => {
 
   // console.log(account.privateKey);
 
+  const btnClose = () => {
+    setShow(false)
+  }
+
   return (
     //main page content
     <div className={`flex flex-col h-screen`}>
@@ -261,7 +308,7 @@ const WalletDataDisplay = () => {
           </p>
         </div>
         <button
-          onClick={() => setisHistoryOpen(true)}
+          onClick={() => setShow(true)}
           className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 flex items-center gap-2"
         >
           <svg
@@ -325,7 +372,7 @@ const WalletDataDisplay = () => {
       )}
 
       {/* Sub Account Table */}
-      <div className="overflow-x-auto max-h-150  ">
+      <div className="overflow-x-auto max-h-150">
         <table className="min-w-full bg-white shadow-md rounded-lg">
           <thead className="bg-gray-200">
             <tr>
@@ -335,37 +382,67 @@ const WalletDataDisplay = () => {
               <th className="py-3 px-6 text-left font-semibold text-gray-700">Balance</th>
               <th className="py-3 px-6 text-left font-semibold text-gray-700">Import</th>
               <th className="py-3 px-6 text-left font-semibold text-gray-700">Transfer To Main</th>
-
-
             </tr>
           </thead>
           <tbody>
             {subAccountDetails.map((account) => (
-              <tr key={account.id} className={`border ${highlightId === account?.UID ? "bg-yellow-200" : ""}`}>
+              <tr
+                key={account.id}
+                ref={(el) => (rowRefs.current[account.UID] = el)}
+                className={`border ${highlightId === account?.UID ? "bg-yellow-200" : ""}`}
+              >
                 <td className="py-4 px-6 border-b border-gray-200">{account.UID}</td>
                 <td className="py-4 px-6 border-b border-gray-200">{account.userName}</td>
                 <td className="py-4 px-6 border-b border-gray-200">{account.address}</td>
-                <td className="py-4 px-6 border-b border-gray-200">{account.balance}</td>
+                <td className="py-4 px-6 flex items-center justify-between bg-white">
+                  <span className="font-semibold text-gray-700">{account.Balance}</span>
+
+                  <button
+                    onClick={() => refreshBalance(account.UID)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-md transition-transform transform hover:scale-110 flex items-center justify-center"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      className="bi bi-arrow-clockwise"
+                      viewBox="0 0 16 16"
+                    >
+                      <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z" />
+                      <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466" />
+                    </svg>
+                  </button>
+                </td>
+
+
                 <td className="py-4 px-6 border-b border-gray-200">
                   <button onClick={() => togglePopup(account)} className="relative group">
-                  👁️
-                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-32 bg-black text-white text-xs rounded-lg px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    👁️
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-32 bg-black text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                       View Details
                     </div>
                   </button>
                 </td>
                 <td className="py-4 px-6 border-b border-gray-200">
-                  <td className=" border-gray-300 p-2 text-center">
-                    <button
-                      onClick={() => setIsOpen(true)}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
-                    >
-                      Add
 
-                    </button>
+                  <td className="border-gray-300 p-2 text-center gap-2">
+                    <div className='flex items-center justify-center space-x-4'>
+                      <button
+                        onClick={() => setIsOpen(true)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-90"
+                      >
+                        Add
+                      </button>
+                      <button
+                        onClick={() => handleViewTransactions(account.address)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
+                      >
+                        View
+                      </button>
+                    </div>
                   </td>
                 </td>
-
               </tr>
             ))}
           </tbody>
@@ -379,52 +456,52 @@ const WalletDataDisplay = () => {
 </div>
 )} */}
 
-{selectedAccount && (
-  <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-lg">
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="bg-white p-5 rounded-xl shadow-xl w-80"
-    >
-      <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
-        🔒 Private Key
-      </h2>
+      {selectedAccount && (
+        <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-lg">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="bg-white p-5 rounded-xl shadow-xl w-80"
+          >
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
+              🔒 Private Key
+            </h2>
 
-      {/* Hidden Private Key */}
-      <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg">
-        <span className="font-mono text-sm truncate">
-          {showPrivateKey
-            ? selectedAccount.privateKey
-            : "•".repeat(selectedAccount.privateKey.length)}
-        </span>
-        <button
-          onClick={() => setShowPrivateKey(!showPrivateKey)}
-          className="ml-2 text-blue-600 hover:text-blue-800 text-sm"
-        >
-          {/* {showPrivateKey ? "Hide" : "Show"} */}
-        </button>
-      </div>
+            {/* Hidden Private Key */}
+            <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg">
+              <span className="font-mono text-sm truncate">
+                {showPrivateKey
+                  ? selectedAccount.privateKey
+                  : "•".repeat(selectedAccount.privateKey.length)}
+              </span>
+              <button
+                onClick={() => setShowPrivateKey(!showPrivateKey)}
+                className="ml-2 text-blue-600 hover:text-blue-800 text-sm"
+              >
+                {/* {showPrivateKey ? "Hide" : "Show"} */}
+              </button>
+            </div>
 
-      {/* Copy Button */}
-      <button
-        onClick={copyToClipboard}
-        className="mt-4 w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:opacity-90 text-white py-2 px-4 rounded-lg transition-all duration-200"
-      >
-        📋 Copy Private Key
-      </button>
+            {/* Copy Button */}
+            <button
+              onClick={copyToClipboard}
+              className="mt-4 w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:opacity-90 text-white py-2 px-4 rounded-lg transition-all duration-200"
+            >
+              📋 Copy Private Key
+            </button>
 
-      {/* Close Button */}
-      <button
-        onClick={() => setSelectedAccount(null)}
-        className="mt-2 w-full bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-all duration-200"
-      >
-        ✖ Close
-      </button>
-    </motion.div>
-  </div>
-)}
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedAccount(null)}
+              className="mt-2 w-full bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-all duration-200"
+            >
+              ✖ Close
+            </button>
+          </motion.div>
+        </div>
+      )}
 
 
       {isOpen && (
@@ -517,6 +594,13 @@ const WalletDataDisplay = () => {
 
         </div>
       )}
+      <TransactionHistoryModal
+        show={showTransactionModal}
+        onClose={() => setShowTransactionModal(false)}
+        walletAddress={selectedWallet}
+      />
+
+      <HistoryModel show={show} onClose={btnClose} walletAddress={mainwalletAddress} />
     </div>
   );
 };
