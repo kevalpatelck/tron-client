@@ -29,17 +29,20 @@ const WalletDataDisplay = () => {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState("");
   const [slideisOpen, slidesetIsOpen] = useState(false);
-  const [dropdownOpen, setdropdownOpen] = useState([]);
+  const [dropdownOpen, setdropdownOpen] = useState("");
 
 
 
   const setDropdownOpen = () => {
     setdropdownOpen(true)
-    console.log(dropdownOpen,"this is open");
-    
+    console.log(dropdownOpen, "this is open");
+
+  }
+  const setDropdownClose = () => {
+    setdropdownOpen(false)
   }
 
-  const[]=useState(false)
+  // const[]=useState(false)
 
   const handleViewTransactions = (wallet) => {
     setSelectedWallet(wallet);
@@ -81,6 +84,7 @@ const WalletDataDisplay = () => {
   const cancelForm = () => {
     setIsOpen(false)
     setisHistoryOpen(false)
+    // setDropdownOpen(false)
   }
 
 
@@ -451,7 +455,7 @@ const WalletDataDisplay = () => {
                         Add
                       </button>
                       <button
-                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                        onClick={() => setDropdownOpen()}
                         className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
                       >
                         View
@@ -556,6 +560,46 @@ const WalletDataDisplay = () => {
       )}
 
 
+
+
+      {
+        dropdownOpen && (
+          <div>
+            <div className="fixed top-8 right-8 w-80 ">
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white shadow-lg rounded-lg p-4 backdrop-blur-sm border">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-lg font-semibold">Transaction History</h2>
+                  <button onClick={() => setDropdownClose()} className="text-gray-500 hover:text-gray-700">✖</button>
+                </div>
+                <ul className="space-y-3">
+                  <li className="flex justify-between items-center p-2 border-b">
+                    <span className="text-lg text-green-500">⬆️</span>
+                    <span>Received from John</span>
+
+                  </li>
+                  <li className="flex justify-between items-center p-2 border-b">
+                    <span className="text-lg text-red-500">⬇️</span>
+
+                    <span>Sent to Alice</span>
+                  </li>
+                  <li className="flex justify-between items-center p-2 border-b">
+                    <span className="text-lg text-green-500">⬆️</span>
+
+                    <span>Received from Mike</span>
+                  </li>
+                  <li className="flex justify-between items-center p-2 border-b">
+                    <span className="text-lg text-red-500">⬇️</span>
+
+                    <span>Sent to Sarah</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        )
+      }
+
       {/* Form to Create Sub Account */}
       {isFormOpen && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 w-96 bg-white rounded-lg shadow-xl p-8 z-50">
@@ -640,37 +684,8 @@ const WalletDataDisplay = () => {
       )}
 
 
-{/* {
-  dropdownOpen && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center backdrop-blur-sm">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-        <h2 className="text-lg font-semibold mb-3">Transaction History</h2>
-        <ul className="space-y-3">
-          <li className="flex justify-between items-center p-2 border-b">
-            <span>Received from John</span>
-            <span className="text-lg text-green-500">⬆️</span>
-          </li>
-          <li className="flex justify-between items-center p-2 border-b">
-            <span>Sent to Alice</span>
-            <span className="text-lg text-red-500">⬇️</span>
-          </li>
-          <li className="flex justify-between items-center p-2 border-b">
-            <span>Received from Mike</span>
-            <span className="text-lg text-green-500">⬆️</span>
-          </li>
-          <li className="flex justify-between items-center p-2 border-b">
-            <span>Sent to Sarah</span>
-            <span className="text-lg text-red-500">⬇️</span>
-          </li>
-        </ul>
-        <button className='absolute top-2 right-2 text-gray-500 hover:text-white-800'>
-          close
-        </button>
-      </div>
-    </div>
-  )
-} */}
-{dropdownOpen && (
+
+      {/* {dropdownOpen && (
     <div className="absolute right-0 top-full mt-2 w-72 bg-white shadow-lg rounded-lg p-4 backdrop-blur-sm border">
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-lg font-semibold">Transaction History</h2>
@@ -695,7 +710,7 @@ const WalletDataDisplay = () => {
         </li>
       </ul>
     </div>
-  )}
+  )} */}
 
       <TransactionHistoryModal
         show={showTransactionModal}
