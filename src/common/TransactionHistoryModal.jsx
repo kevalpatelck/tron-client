@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from "framer-motion";
+
 
 const TransactionHistoryModal = ({ show, onClose, walletAddress }) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+      const [expandedText, setExpandedText] = useState(null);
+    
 
     useEffect(() => {
         if (!show || !walletAddress) return;

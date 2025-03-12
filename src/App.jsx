@@ -9,6 +9,7 @@ import { ToastContainer } from "react-toastify";
 // import Transferhis from './components/Transferhis'
 import Example from './components/Example'
 import Sliderimage from './slider/Sliderimage';
+import Examplecompo from './components/Examplecompo'
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -18,8 +19,9 @@ function App() {
 {/* <Newwallet/> */}
 <ToastContainer/>
 {/* <ThemeToggle/> */}
-<AttractiveDataDisplay/>
-{/* <Sliderimage/> */}
+{/* <AttractiveDataDisplay/> */}
+{/* <Examplecompo/> */}
+<Sliderimage/>
 {/* <Example/> */}
 {/* <Transferhis/> */}
 {/* <Button/> */}

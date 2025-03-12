@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import "react-toastify/dist/ReactToastify.css";
 import HistoryModel from '../common/HistoryModel';
 import TransactionHistoryModal from '../common/TransactionHistoryModal';
+import { tr } from 'framer-motion/client';
 
 
 const WalletDataDisplay = () => {
@@ -27,8 +28,18 @@ const WalletDataDisplay = () => {
   const [show, setShow] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState("");
+  const [slideisOpen, slidesetIsOpen] = useState(false);
+  const [dropdownOpen, setdropdownOpen] = useState([]);
 
-  // const[]=useState(false)
+
+
+  const setDropdownOpen = () => {
+    setdropdownOpen(true)
+    console.log(dropdownOpen,"this is open");
+    
+  }
+
+  const[]=useState(false)
 
   const handleViewTransactions = (wallet) => {
     setSelectedWallet(wallet);
@@ -82,7 +93,12 @@ const WalletDataDisplay = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(selectedAccount?.privateKey);
+
+    slidesetIsOpen(true);
     // alert("Private Key Copied!");
+  };
+  const closeModal = () => {
+    setIsOpen(false);
   };
 
 
@@ -131,7 +147,7 @@ const WalletDataDisplay = () => {
           const subAccount = data.data.SubAccounts[0]; // Get the first sub-account
           console.log(subAccount, "subAccount.UID");
           console.log("subAccountDetails", data.data.SubAccounts);
-          
+
           // window.location.reload()
           // Set subAccount details in the state
           setSubAccountDetails(data.data.SubAccounts);
@@ -255,7 +271,7 @@ const WalletDataDisplay = () => {
 
   return (
     //main page content
-    <div className={`flex flex-col h-screen`}>
+    <div className={`relative flex flex-col h-screen`}>
       {/* Top Bar with Login/Logout */}
       <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Wallet Dashboard</h1>
@@ -435,11 +451,17 @@ const WalletDataDisplay = () => {
                         Add
                       </button>
                       <button
-                        onClick={() => handleViewTransactions(account.address)}
+                        onClick={() => setDropdownOpen(!dropdownOpen)}
                         className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
                       >
                         View
                       </button>
+                      {/* <button
+                        onClick={() => handleViewTransactions(account.address)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
+                      >
+                        View
+                      </button> */}
                     </div>
                   </td>
                 </td>
@@ -590,10 +612,91 @@ const WalletDataDisplay = () => {
 
 
 
+          {isOpen && (
+            <div className="fixed inset-0 flex items-center justify-center z-50">
+              {/* Modal background (blur effect) */}
+              <div
+                className="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"
+                onClick={closeModal}
+              ></div>
+
+              {/* Modal content (Slider with close button) */}
+              <div className="relative bg-white p-4 rounded-lg shadow-lg z-10">
+                <button
+                  onClick={closeModal}
+                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+                >
+                  Close
+                </button>
+                <Sliderimage />
+              </div>
+            </div>
+          )}
+
+
 
 
         </div>
       )}
+
+
+{/* {
+  dropdownOpen && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center backdrop-blur-sm">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+        <h2 className="text-lg font-semibold mb-3">Transaction History</h2>
+        <ul className="space-y-3">
+          <li className="flex justify-between items-center p-2 border-b">
+            <span>Received from John</span>
+            <span className="text-lg text-green-500">⬆️</span>
+          </li>
+          <li className="flex justify-between items-center p-2 border-b">
+            <span>Sent to Alice</span>
+            <span className="text-lg text-red-500">⬇️</span>
+          </li>
+          <li className="flex justify-between items-center p-2 border-b">
+            <span>Received from Mike</span>
+            <span className="text-lg text-green-500">⬆️</span>
+          </li>
+          <li className="flex justify-between items-center p-2 border-b">
+            <span>Sent to Sarah</span>
+            <span className="text-lg text-red-500">⬇️</span>
+          </li>
+        </ul>
+        <button className='absolute top-2 right-2 text-gray-500 hover:text-white-800'>
+          close
+        </button>
+      </div>
+    </div>
+  )
+} */}
+{dropdownOpen && (
+    <div className="absolute right-0 top-full mt-2 w-72 bg-white shadow-lg rounded-lg p-4 backdrop-blur-sm border">
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-lg font-semibold">Transaction History</h2>
+        <button onClick={() => setDropdownOpen(false)} className="text-gray-500 hover:text-gray-700">✖</button>
+      </div>
+      <ul className="space-y-3">
+        <li className="flex justify-between items-center p-2 border-b">
+          <span>Received from John</span>
+          <span className="text-lg text-green-500">⬆️</span>
+        </li>
+        <li className="flex justify-between items-center p-2 border-b">
+          <span>Sent to Alice</span>
+          <span className="text-lg text-red-500">⬇️</span>
+        </li>
+        <li className="flex justify-between items-center p-2 border-b">
+          <span>Received from Mike</span>
+          <span className="text-lg text-green-500">⬆️</span>
+        </li>
+        <li className="flex justify-between items-center p-2 border-b">
+          <span>Sent to Sarah</span>
+          <span className="text-lg text-red-500">⬇️</span>
+        </li>
+      </ul>
+    </div>
+  )}
+
       <TransactionHistoryModal
         show={showTransactionModal}
         onClose={() => setShowTransactionModal(false)}
