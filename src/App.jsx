@@ -2,6 +2,7 @@ import './App.css'
 import AttractiveDataDisplay from './components/AttractiveDataDisplay '
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { ToastContainer } from "react-toastify";
+import Sliderimage from './slider/Sliderimage';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <ToastContainer />
         <Routes>
           <Route path='/' element={<AttractiveDataDisplay />}></Route>
+          {/* <Route path='/' element={<Sliderimage />}></Route> */}
         </Routes>
       </Router>
       

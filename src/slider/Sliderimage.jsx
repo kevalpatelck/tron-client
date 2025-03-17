@@ -1,38 +1,78 @@
-import React, { useState } from 'react';
-import { Carousel } from '@material-tailwind/react';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
-function Sliderimage() {
+function SliderImage({ onClose }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-
+  
   const images = [
-    'https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2560&q=80',
-    'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2940&q=80',
-    'https://images.unsplash.com/photo-1518623489648-a173ef7824f3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2762&q=80',
+    "/images/step1.png",
+    "/images/step2.png",
+    "/images/step3.png",
+    "/images/step4.png",
   ];
+  
+  const texts = [
+    "Step 1: Welcome to the journey! Let's get started.",
+    "Step 2: Follow the instructions carefully.",
+    "Step 3: Almost there! Keep going.",
+    "Step 4: Congratulations! You have completed the steps.",
+  ];
+
+  useEffect(() => {
+    if (currentIndex === images.length - 1) {
+      setTimeout(() => onClose(), 2000); // Auto-close popup after last step
+    }
+  }, [currentIndex, onClose]);
 
   const nextImage = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      prevIndex === images.length - 1 ? prevIndex : prevIndex + 1
     );
   };
 
   return (
-    <div>
-      <Carousel className="rounded-xl">
-        <img
-          src={images[currentIndex]}
-          alt={`image ${currentIndex + 1}`}
-          className="h-full w-full object-cover"
-        />
-      </Carousel>
+    
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="flex flex-col items-center bg-white p-6 rounded-lg shadow-xl w-full max-w-md"
+    >
+      {/* Image Section with Animation */}
+      <motion.img
+        key={currentIndex}
+        src={images[currentIndex]}
+        alt={`Step ${currentIndex + 1}`}
+        className="w-full h-96 object-contain rounded-lg"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      />
+
+      {/* Text Section with Animation */}
+      <motion.p 
+        key={currentIndex + "-text"}
+        className="text-lg text-gray-700 mt-4 text-center"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {texts[currentIndex]}
+      </motion.p>
+
+      {/* Next Button */}
       <button
         onClick={nextImage}
-        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md"
+        className={`mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white 
+                    rounded-full shadow-lg hover:scale-105 transition-all duration-300 ${
+                      currentIndex === images.length - 1 ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+        disabled={currentIndex === images.length - 1}
       >
-        Next
+        {currentIndex === images.length - 1 ? "Completed ✔" : "Next →"}
       </button>
-    </div>
+    </motion.div>
   );
 }
 
-export default Sliderimage;
+export default SliderImage;

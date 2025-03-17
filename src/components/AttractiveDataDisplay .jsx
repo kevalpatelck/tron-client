@@ -6,8 +6,11 @@ import { motion } from "framer-motion";
 import HistoryModel from '../common/HistoryModel';
 import TransactionHistoryModal from '../common/TransactionHistoryModal';
 import { MoveDownLeft, MoveUpRight } from 'lucide-react';
+import SliderImage from '../slider/Sliderimage';
+import PopupModal from '../slider/PopupModal';
 import moment from 'moment';
 import { Info, X } from 'lucide-react';
+import { b } from 'framer-motion/client';
 
 const WalletDataDisplay = () => {
   // State declarations
@@ -37,6 +40,9 @@ const WalletDataDisplay = () => {
   const [refreshingBalances, setRefreshingBalances] = useState({});
   const [subAccountTransactions, setSubAccountTransactions] = useState({});
   const [expandedText, setExpandedText] = useState(null);
+  const [isBalance, setisBalance] = useState("");
+  const [isvalidaBalance, setisvalidaBalance] = useState("");
+  const [isModalOpen, setModalOpen] = useState(false);
 
   const rowRefs = useRef({});
 
@@ -95,13 +101,19 @@ const WalletDataDisplay = () => {
   // UI Handlers
   const openForm = () => setIsFormOpen(true);
   const cancelForm = () => setIsOpen(false);
+
+
   const togglePopup = (account) => {
     setSelectedAccount(account);
     setShowPrivateKey(false);
+    console.log("Selected Account:", account.address);
+    
   };
   const copyToClipboard = () => {
+    alert("Private Key copied");
     navigator.clipboard.writeText(selectedAccount?.privateKey);
-    setSlideIsOpen(true);
+    // setSlideIsOpen(true);
+    setModalOpen(true);
   };
   const closeModal = () => setIsOpen(false);
 
@@ -284,6 +296,52 @@ const WalletDataDisplay = () => {
     }));
   };
 
+  const btnAdd = (Balance) => { 
+    setisBalance(Balance)
+    setIsOpen(true);
+    console.log("Balance:", Balance);
+    
+  }
+
+
+
+  const transferAmount = async () => {
+
+    
+    console.log("1",inputValue);
+    console.log("2",isBalance);
+    console.log("3",inputValue <= isBalance);
+
+    if (Number(inputValue) > Number(isBalance)) {
+      alert("Insufficient Balance");
+      setisvalidaBalance("Insufficient Balance");
+      return;
+    }
+    
+
+    try {
+            
+      const response = await fetch("http://localhost:4444/api/tron/send-usdt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ amount: inputValue }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("Transfer successful!");
+      } else {
+        alert(`Error: ${data.message || "Something went wrong"}`);
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      alert("Failed to connect to the server.");
+    }
+
+  }
+
   return (
     //main page content
     <div className={`relative flex flex-col h-screen`}>
@@ -291,21 +349,14 @@ const WalletDataDisplay = () => {
       <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Wallet Dashboard</h1>
         <div>
-          {isLoggedIn ? (
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Logout
-            </button>
-          ) : (
+    
             <button
               onClick={openForm}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ms-3"
             >
               Create Sub Account
             </button>
-          )}
+          
         </div>
         <button
           onClick={handleConnectTron}
@@ -399,7 +450,7 @@ const WalletDataDisplay = () => {
                     <td className="py-4 px-6 border-b border-gray-200">{account.UID}</td>
                     <td className="py-4 px-6 border-b border-gray-200">{account.userName}</td>
                     <td className="py-4 px-6 border-b border-gray-200">{account.address}</td>
-                    <td className="pt-7 pb-4 px-6 flex items-center justify-between bg-white">
+                    <td className="pt-7 pb-4 px-6 flex items-center justify-between">
                       <span className="font-semibold text-gray-700">{account.Balance}</span>
 
                       <button
@@ -449,7 +500,7 @@ const WalletDataDisplay = () => {
                       <td className="border-gray-300 p-2 text-center gap-2">
                         <div className='flex items-center justify-center space-x-4'>
                           <button
-                            onClick={() => setIsOpen(true)}
+                            onClick={() => btnAdd(account?.Balance)}
                             className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-90"
                           >
                             Add
@@ -518,34 +569,40 @@ const WalletDataDisplay = () => {
         </div>
       )}
 
-      {isOpen && (
-        <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-lg shadow-lg w-80 border border-gray-300">
-          <h2 className="text-lg font-bold mb-4">Enter Amount</h2>
-          <input
-            type="text"
-            placeholder="Enter Amount"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg mb-4"
-          />
-          <div className="flex space-x-4 w-full">
-            <button
-              onClick={() => cancelForm()}
-              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
-            >
-              Transfer to Main
-            </button>
+{isOpen && (
+  <div className="absolute right-48 mt-70 transform -translate-x-1/2 bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-lg shadow-lg w-80 border border-gray-300">
+    <h2 className="text-lg font-bold mb-4">Enter Amount</h2>
+    <input
+      type="text"
+      placeholder="Enter Amount"
+      value={inputValue}
+      onChange={(e) => {
+        const value = Number(e.target.value);
+      
+          setInputValue(value);
+ 
+      }}
+      
+      className="w-full p-2 border border-gray-300 rounded-lg mb-4"
+    />
+    <div className="flex space-x-4 w-full">
+      <button
+        onClick={() => transferAmount()}
+        className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+      >
+        Transfer to Main
+      </button>
 
-            <button
-              onClick={() => cancelForm()}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
-            >
-              Cancel
-            </button>
-          </div>
+      <button
+        onClick={() => cancelForm()}
+        className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
 
-        </div>
-      )}
 
       {dropdownOpen && (
         <div>
@@ -627,26 +684,7 @@ const WalletDataDisplay = () => {
         </div>
       )}
 
-      {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          {/* Modal background (blur effect) */}
-          <div
-            className="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"
-            onClick={closeModal}
-          ></div>
-
-          {/* Modal content (Slider with close button) */}
-          <div className="relative bg-white p-4 rounded-lg shadow-lg z-10">
-            <button
-              onClick={closeModal}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-            >
-              Close
-            </button>
-            <Sliderimage />
-          </div>
-        </div>
-      )}
+     
       
       {/* Form to Create Sub Account */}
       {isFormOpen && (
@@ -811,7 +849,11 @@ const WalletDataDisplay = () => {
           )}
         </motion.div>
       </>)}
+      <PopupModal isOpen={isModalOpen} onClose={() => setModalOpen(false)}>
+        <SliderImage />
+      </PopupModal>
 
+      
       <TransactionHistoryModal
         show={showTransactionModal}
         onClose={() => setShowTransactionModal(false)}
