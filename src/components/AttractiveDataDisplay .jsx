@@ -11,6 +11,7 @@ import PopupModal from '../slider/PopupModal';
 import moment from 'moment';
 import { Info, X } from 'lucide-react';
 import { b, main } from 'framer-motion/client';
+import { use } from 'react';
 
 const WalletDataDisplay = () => {
   // State declarations
@@ -44,6 +45,7 @@ const WalletDataDisplay = () => {
   const [isBalance, setisBalance] = useState("");
   const [isvalidaBalance, setisvalidaBalance] = useState("");
   const [isModalOpen, setModalOpen] = useState(false);
+  const [adresswallet, setAdresswallet] = useState("");
 
   const rowRefs = useRef({});
 
@@ -75,13 +77,13 @@ const WalletDataDisplay = () => {
         try {
           const balanceInSun = await window.tronWeb.trx.getBalance(storedWallet);
           setmainBalance(window.tronWeb.fromSun(balanceInSun));
-          console.log("main wallet balance stored",mainBalance);
-          
-          console.log("main wallet adress stored",storedWallet);
-          
+          console.log("main wallet balance stored", mainBalance);
 
-       
-          
+          console.log("main wallet adress stored", storedWallet);
+
+
+
+
         } catch (balanceErr) {
           console.error("Error fetching balance for stored wallet:", balanceErr);
         }
@@ -115,7 +117,7 @@ const WalletDataDisplay = () => {
     setSelectedAccount(account);
     setShowPrivateKey(false);
     console.log("Selected Account:", account.address);
-    
+
   };
   const copyToClipboard = () => {
     alert("Private Key copied");
@@ -134,9 +136,12 @@ const WalletDataDisplay = () => {
       sessionStorage.setItem("mainWalletAddress", walletAddress);
       try {
         const balanceInSun = await window.tronWeb.trx.getBalance(walletAddress);
-        setmainBalance(window.tronWeb.fromSun(balanceInSun));        
-        console.log("main wallet balance",mainBalance);
-      
+        setmainBalance(window.tronWeb.fromSun(balanceInSun));
+
+
+
+        console.log("main wallet balance", mainBalance);
+
 
         if (skipWalletToast) {
           toast.success("Tron Wallet Connected Successfully", {
@@ -170,7 +175,7 @@ const WalletDataDisplay = () => {
       alert("TronLink is not installed or not ready.");
     }
   };
- 
+
   // Refresh the balance for a specific sub account (by UID)
   const refreshBalance = async (uid) => {
     setRefreshingBalances(prev => ({ ...prev, [uid]: true }));
@@ -306,51 +311,50 @@ const WalletDataDisplay = () => {
     }));
   };
 
-  const btnAdd = (Balance) => { 
-    setisBalance(Balance)
+  const btnAdd = (USDTBalance, address) => {
+    setisBalance(USDTBalance)
     setIsOpen(true);
-    console.log("Balance:", Balance);
-    
+    setAdresswallet(address);
+    console.log("Balance:", USDTBalance);
+
+
   }
-
-
 
   const transferAmount = async () => {
-
-    
-    console.log("1",inputValue);
-    console.log("2",isBalance);
-    console.log("3",inputValue <= isBalance);
+    console.log("Address Wallet:", adresswallet); 
+    console.log("Transfer Amount:", inputValue); 
 
     if (Number(inputValue) > Number(isBalance)) {
-      alert("Insufficient Balance");
-      setisvalidaBalance("Insufficient Balance");
-      return;
+        alert("Insufficient Balance");
+        setisvalidaBalance("Insufficient Balance");
+        return;
     }
-    
 
     try {
-            
-      const response = await fetch("http://localhost:4444/api/tron/send-usdt", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ amount: inputValue }),
-      });
+        const response = await fetch("http://localhost:4444/api/tron/send-usdt", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ 
+                amount: inputValue, 
+                walletaddressprice: adresswallet  
+            }),
+        });
 
-      const data = await response.json();
-      if (response.ok) {
-        alert("Transfer successful!");
-      } else {
-        alert(`Error: ${data.message || "Something went wrong"}`);
-      }
+        const data = await response.json();
+
+        if (response.ok) {
+            alert("Transfer successful!");
+        } else {
+            alert(`Error: ${data.message || "Something went wrong"}`);
+        }
     } catch (error) {
-      console.error("API Error:", error);
-      alert("Failed to connect to the server.");
+        console.error("API Error:", error);
+        alert("Failed to connect to the server.");
     }
+};
 
-  }
 
   return (
     //main page content
@@ -359,14 +363,14 @@ const WalletDataDisplay = () => {
       <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Wallet Dashboard</h1>
         <div>
-    
-            <button
-              onClick={openForm}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ms-3"
-            >
-              Create Sub Account
-            </button>
-          
+
+          <button
+            onClick={openForm}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ms-3"
+          >
+            Create Sub Account
+          </button>
+
         </div>
         <button
           onClick={handleConnectTron}
@@ -518,7 +522,7 @@ const WalletDataDisplay = () => {
                       <td className="border-gray-300 p-2 text-center gap-2">
                         <div className='flex items-center justify-center space-x-4'>
                           <button
-                            onClick={() => btnAdd(account?.Balance)}
+                            onClick={() => btnAdd(account?.USDTBalance, account?.address)}
                             className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-90"
                           >
                             Add
@@ -587,40 +591,40 @@ const WalletDataDisplay = () => {
         </div>
       )}
 
-{isOpen && (
+      {isOpen && (
 
-  <div className="absolute right-48 mt-70 transform -translate-x-1/2 bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-lg shadow-lg w-80 border border-gray-300">
-    <h2 className="text-lg font-bold mb-4">Enter Amount</h2>
-    <input
-      type="text"
-      placeholder="Enter Amount"
-      value={inputValue}
-      onChange={(e) => {
-        const value = Number(e.target.value);
-      
-          setInputValue(value);
- 
-      }}
-      
-      className="w-full p-2 border border-gray-300 rounded-lg mb-4"
-    />
-    <div className="flex space-x-4 w-full">
-      <button
-        onClick={() => transferAmount()}
-        className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
-      >
-        Transfer to Main
-      </button>
+        <div className="absolute right-48 mt-70 transform -translate-x-1/2 bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-lg shadow-lg w-80 border border-gray-300">
+          <h2 className="text-lg font-bold mb-4">Enter Amount</h2>
+          <input
+            type="text"
+            placeholder="Enter Amount"
+            value={inputValue}
+            onChange={(e) => {
+              const value = Number(e.target.value);
 
-      <button
-        onClick={() => cancelForm()}
-        className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
-      >
-        Cancel
-      </button>
-    </div>
-  </div>
-)}
+              setInputValue(value);
+
+            }}
+
+            className="w-full p-2 border border-gray-300 rounded-lg mb-4"
+          />
+          <div className="flex space-x-4 w-full">
+            <button
+              onClick={() => transferAmount()}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+            >
+              Transfer to Main
+            </button>
+
+            <button
+              onClick={() => cancelForm()}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
 
       {dropdownOpen && (
@@ -703,8 +707,8 @@ const WalletDataDisplay = () => {
         </div>
       )}
 
-     
-      
+
+
       {/* Form to Create Sub Account */}
       {isFormOpen && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 w-96 bg-white rounded-lg shadow-xl p-8 z-50">
@@ -872,7 +876,7 @@ const WalletDataDisplay = () => {
         <SliderImage />
       </PopupModal>
 
-      
+
       <TransactionHistoryModal
         show={showTransactionModal}
         onClose={() => setShowTransactionModal(false)}
