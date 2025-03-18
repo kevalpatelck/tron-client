@@ -13,33 +13,79 @@ const HistoryModel = ({ show, onClose, walletAddress }) => {
     }
   }, [show, walletAddress]);
 
+  // const fetchTransactionHistory = async () => {
+  //   setLoading(true);
+  //   setError("");
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:4444/api/tron/transactions?address=${walletAddress}`
+  //     );
+  //     const data = await response.json();
+
+  //     if (data.success && data.data.message.success) {
+  //       const apiTransactions = data.data.message.transactions.map((txn) => ({
+  //         txID: txn.txID,
+  //         amount: txn.raw_data.contract[0].parameter.value.amount / 1e6 + " TRX",
+  //         owner_address: txn.raw_data.contract[0].parameter.value.owner_address,
+  //         to_address: txn.raw_data.contract[0].parameter.value.to_address,
+  //       }));
+  //       setTransactions(apiTransactions);
+  //     } else {
+  //       setError("Failed to fetch transactions.");
+  //     }
+  //   } catch (error) {
+  //     setError("Error fetching transaction history.");
+  //     console.error("Error:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchTransactionHistory = async () => {
+    if (!walletAddress) {
+        setError("Wallet address is missing.");
+        return;
+    }
+
     setLoading(true);
     setError("");
-    try {
-      const response = await fetch(
-        `http://localhost:4444/api/tron/transactions?address=${walletAddress}`
-      );
-      const data = await response.json();
 
-      if (data.success && data.data.message.success) {
-        const apiTransactions = data.data.message.transactions.map((txn) => ({
-          txID: txn.txID,
-          amount: txn.raw_data.contract[0].parameter.value.amount / 1e6 + " TRX",
-          owner_address: txn.raw_data.contract[0].parameter.value.owner_address,
-          to_address: txn.raw_data.contract[0].parameter.value.to_address,
-        }));
-        setTransactions(apiTransactions);
-      } else {
-        setError("Failed to fetch transactions.");
-      }
+    try {
+        console.log("Fetching transactions for:", walletAddress);
+        
+        const response = await fetch(
+            `http://localhost:4444/api/tron/transactions?address=${walletAddress}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("API Response:", data); // Debugging log
+
+        if (data?.success && data?.data?.message?.success) {
+            const apiTransactions = data.data.message.transactions?.map((txn) => ({
+                txID: txn.txID || "N/A",
+                amount: txn.raw_data?.contract?.[0]?.parameter?.value?.amount
+                    ? txn.raw_data.contract[0].parameter.value.amount / 1e6 + " TRX"
+                    : "N/A",
+                owner_address: txn.raw_data?.contract?.[0]?.parameter?.value?.owner_address || "N/A",
+                to_address: txn.raw_data?.contract?.[0]?.parameter?.value?.to_address || "N/A",
+            })) || [];
+
+            setTransactions(apiTransactions);
+        } else {
+            setError("Failed to fetch transactions. Invalid response format.");
+        }
     } catch (error) {
-      setError("Error fetching transaction history.");
-      console.error("Error:", error);
+        setError("Error fetching transaction history.");
+        console.error("Fetch Error:", error);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
 
   return (
     <motion.div

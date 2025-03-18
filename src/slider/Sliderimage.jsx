@@ -12,10 +12,10 @@ function SliderImage({ onClose }) {
   ];
   
   const texts = [
-    "Step 1: Welcome to the journey! Let's get started.",
-    "Step 2: Follow the instructions carefully.",
-    "Step 3: Almost there! Keep going.",
-    "Step 4: Congratulations! You have completed the steps.",
+    "Step 1: Open a Tron wallet and click on TRON, which is positioned at the top left.",
+    "Step 2: Now, click on Add Wallet.",
+    "Step 3: Now, click on Import Wallet.",
+    "Step 4: Paste the private key here and click on the Next button.",
   ];
 
   useEffect(() => {

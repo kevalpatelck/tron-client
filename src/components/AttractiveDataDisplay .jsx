@@ -10,7 +10,7 @@ import SliderImage from '../slider/Sliderimage';
 import PopupModal from '../slider/PopupModal';
 import moment from 'moment';
 import { Info, X } from 'lucide-react';
-import { b } from 'framer-motion/client';
+import { b, main } from 'framer-motion/client';
 
 const WalletDataDisplay = () => {
   // State declarations
@@ -26,6 +26,7 @@ const WalletDataDisplay = () => {
   const [subAccountDetails, setSubAccountDetails] = useState([]);
   const [mainwalletAddress, setmainWalletAddress] = useState('');
   const [mainBalance, setmainBalance] = useState('');
+  const [mainUsdtBalance, setmainUsdtBalance] = useState('');
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -74,6 +75,13 @@ const WalletDataDisplay = () => {
         try {
           const balanceInSun = await window.tronWeb.trx.getBalance(storedWallet);
           setmainBalance(window.tronWeb.fromSun(balanceInSun));
+          console.log("main wallet balance stored",mainBalance);
+          
+          console.log("main wallet adress stored",storedWallet);
+          
+
+       
+          
         } catch (balanceErr) {
           console.error("Error fetching balance for stored wallet:", balanceErr);
         }
@@ -126,7 +134,9 @@ const WalletDataDisplay = () => {
       sessionStorage.setItem("mainWalletAddress", walletAddress);
       try {
         const balanceInSun = await window.tronWeb.trx.getBalance(walletAddress);
-        setmainBalance(window.tronWeb.fromSun(balanceInSun));
+        setmainBalance(window.tronWeb.fromSun(balanceInSun));        
+        console.log("main wallet balance",mainBalance);
+      
 
         if (skipWalletToast) {
           toast.success("Tron Wallet Connected Successfully", {
@@ -392,6 +402,12 @@ const WalletDataDisplay = () => {
             {mainBalance ? mainBalance : "Please connect Tron wallet"}
           </p>
         </div>
+        <div className="flex items-end space-x-2 bg-gray-300 p-2 rounded-lg">
+          <label className="font-semibold text-gray-700">Usdt Balance:</label>
+          <p className="text-blue-600 font-mono truncate">
+            {mainUsdtBalance ? mainUsdtBalance : "Please connect Tron wallet"}
+          </p>
+        </div>
         <button
           onClick={() => setShow(true)}
           className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 flex items-center gap-2"
@@ -435,7 +451,8 @@ const WalletDataDisplay = () => {
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Id</th>
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Name</th>
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Wallet Address</th>
-                  <th className="py-3 px-6 text-left font-semibold text-gray-700">Balance</th>
+                  <th className="py-3 px-6 text-left font-semibold text-gray-700">Trx-Balance</th>
+                  <th className="py-3 px-6 text-left font-semibold text-gray-700">Usdt-Balance</th>
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Import</th>
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Transfer To Main</th>
                 </tr>
@@ -450,8 +467,9 @@ const WalletDataDisplay = () => {
                     <td className="py-4 px-6 border-b border-gray-200">{account.UID}</td>
                     <td className="py-4 px-6 border-b border-gray-200">{account.userName}</td>
                     <td className="py-4 px-6 border-b border-gray-200">{account.address}</td>
+                    <td className="py-4 px-6 border-b border-gray-200">{account.TRXbalance}</td>
                     <td className="pt-7 pb-4 px-6 flex items-center justify-between">
-                      <span className="font-semibold text-gray-700">{account.Balance}</span>
+                      <span className="font-semibold text-gray-700">{account.USDTBalance}</span>
 
                       <button
                         onClick={() => refreshBalance(account.UID)}
@@ -570,6 +588,7 @@ const WalletDataDisplay = () => {
       )}
 
 {isOpen && (
+
   <div className="absolute right-48 mt-70 transform -translate-x-1/2 bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-lg shadow-lg w-80 border border-gray-300">
     <h2 className="text-lg font-bold mb-4">Enter Amount</h2>
     <input
