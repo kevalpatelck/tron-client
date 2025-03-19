@@ -18,7 +18,7 @@ const HistoryModel = ({ show, onClose, walletAddress }) => {
   //   setError("");
   //   try {
   //     const response = await fetch(
-  //       `http://localhost:4444/api/tron/transactions?address=${walletAddress}`
+  //       `https://tronrewards-backend.onrender.com/api/tron/transactions?address=${walletAddress}`
   //     );
   //     const data = await response.json();
 
@@ -54,7 +54,7 @@ const HistoryModel = ({ show, onClose, walletAddress }) => {
         console.log("Fetching transactions for:", walletAddress);
         
         const response = await fetch(
-            `http://localhost:4444/api/tron/transactions?address=${walletAddress}`
+            `https://tronrewards-backend.onrender.com/api/tron/transactions?address=${walletAddress}`
         );
 
         if (!response.ok) {

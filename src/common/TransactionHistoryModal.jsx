@@ -16,7 +16,7 @@ const TransactionHistoryModal = ({ show, onClose, walletAddress }) => {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch(`http://localhost:4444/api/tron/transactions?address=${walletAddress}`);
+                const response = await fetch(`https://tronrewards-backend.onrender.com/api/tron/transactions?address=${walletAddress}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

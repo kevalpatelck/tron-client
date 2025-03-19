@@ -12,6 +12,7 @@ import moment from 'moment';
 import { Info, X } from 'lucide-react';
 import { b, main } from 'framer-motion/client';
 import { use } from 'react';
+import Api from '../common/Api';
 
 const WalletDataDisplay = () => {
   // State declarations
@@ -35,10 +36,8 @@ const WalletDataDisplay = () => {
   const [show, setShow] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState("");
-  const [slideisOpen, setSlideIsOpen] = useState(false);
   const [dropdownOpen, setdropdownOpen] = useState("");
   const [loading, setLoading] = useState(false);
-  // const [isrefreshbalance, SetIsRefreshBalanace] = useState(false);
   const [refreshingBalances, setRefreshingBalances] = useState({});
   const [subAccountTransactions, setSubAccountTransactions] = useState({});
   const [expandedText, setExpandedText] = useState(null);
@@ -46,11 +45,13 @@ const WalletDataDisplay = () => {
   const [isvalidaBalance, setisvalidaBalance] = useState("");
   const [isModalOpen, setModalOpen] = useState(false);
   const [adresswallet, setAdresswallet] = useState("");
-
   const rowRefs = useRef({});
 
+
+
+  // Fetch Sub Accounts from API
   const getSubAccounts = async (wallet) => {
-    const response = await fetch(`http://localhost:4444/api/tron/get-sub-id?address=${wallet}`);
+    const response = await fetch(`https://tronrewards-backend.onrender.com/api/tron/get-sub-id?address=${wallet}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data.data &&
@@ -65,6 +66,7 @@ const WalletDataDisplay = () => {
     fetchwalletAddress();
   }, []);
 
+  // Fetch wallet address and balance
   const fetchwalletAddress = async () => {
     setLoading(true);
     try {
@@ -80,8 +82,13 @@ const WalletDataDisplay = () => {
           console.log("main wallet balance stored", mainBalance);
 
           console.log("main wallet adress stored", storedWallet);
-
-
+          const contract = await window.tronWeb.contract().at("TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf");
+          const balance = await contract.balanceOf(storedWallet).call();
+          
+          // Convert from 6 decimals
+          const balanceInUsdt = window.tronWeb.toDecimal(balance) / 1e6;
+          
+          console.log("USDT Balance=========>:", balanceInUsdt);
 
 
         } catch (balanceErr) {
@@ -112,13 +119,15 @@ const WalletDataDisplay = () => {
   const openForm = () => setIsFormOpen(true);
   const cancelForm = () => setIsOpen(false);
 
-
+  // 
   const togglePopup = (account) => {
     setSelectedAccount(account);
     setShowPrivateKey(false);
     console.log("Selected Account:", account.address);
 
   };
+
+  // for copy private key 
   const copyToClipboard = () => {
     alert("Private Key copied");
     navigator.clipboard.writeText(selectedAccount?.privateKey);
@@ -138,6 +147,13 @@ const WalletDataDisplay = () => {
         const balanceInSun = await window.tronWeb.trx.getBalance(walletAddress);
         setmainBalance(window.tronWeb.fromSun(balanceInSun));
 
+        const contract = await window.tronWeb.contract().at("TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf");
+        const balance = await contract.balanceOf(walletAddress).call();
+        
+        // Convert from 6 decimals 
+        const balanceInUsdt = window.tronWeb.toDecimal(balance) / 1e6;
+        setmainUsdtBalance(balanceInUsdt);
+        console.log("USDT Balance=========>:", balanceInUsdt);
 
 
         console.log("main wallet balance", mainBalance);
@@ -228,7 +244,7 @@ const WalletDataDisplay = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:4444/api/tron/create-sub", formData);
+      const response = await axios.post("https://tronrewards-backend.onrender.com/api/tron/create-sub", formData);
       setHighlightId(response?.data?.data?.subAccount?.UID);
       if (response?.data?.success) {
         toast.success("Account Created Successfully", {
@@ -254,23 +270,26 @@ const WalletDataDisplay = () => {
 
   const closeForm = () => setIsFormOpen(false);
 
-  // Logout handler: clears wallet data and sessionStorage
+  // Logout handler: clears wallet data and sessionStorage 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setmainWalletAddress('');
     setmainBalance('');
     setError('');
+    setSubAccountDetails([]);
     sessionStorage.removeItem("mainWalletAddress");
   };
 
   const removeHighlight = () => setTimeout(() => setHighlightId(null), 2000);
   const btnClose = () => setShow(false);
 
+
+  // Fetch transaction history for a specific wallet address
   const fetchTransactionHistory = async (wallet) => {
     setError("");
     try {
       const response = await fetch(
-        `http://localhost:4444/api/tron/transactions?address=${wallet}`
+        `https://tronrewards-backend.onrender.com/api/tron/transactions?address=${wallet}`
       );
       const data = await response.json();
 
@@ -294,6 +313,8 @@ const WalletDataDisplay = () => {
     }
   };
 
+
+
   const setDropdownOpen = (wallet) => {
     fetchTransactionHistory(wallet)
     setdropdownOpen(true)
@@ -311,6 +332,7 @@ const WalletDataDisplay = () => {
     }));
   };
 
+  // for set walletaddress and balance in transfer amount
   const btnAdd = (USDTBalance, address) => {
     setisBalance(USDTBalance)
     setIsOpen(true);
@@ -320,40 +342,43 @@ const WalletDataDisplay = () => {
 
   }
 
+  // for transfer amount to main wallet from sub account
   const transferAmount = async () => {
-    console.log("Address Wallet:", adresswallet); 
-    console.log("Transfer Amount:", inputValue); 
+    console.log("Address Wallet:", adresswallet);
+    console.log("Transfer Amount:", inputValue);
 
     if (Number(inputValue) > Number(isBalance)) {
-        alert("Insufficient Balance");
-        setisvalidaBalance("Insufficient Balance");
-        return;
+      alert("Insufficient Balance");
+      setisvalidaBalance("Insufficient Balance");
+      return;
     }
 
     try {
-        const response = await fetch("http://localhost:4444/api/tron/send-usdt", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ 
-                amount: inputValue, 
-                walletaddressprice: adresswallet  
-            }),
-        });
+      const response = await fetch("https://tronrewards-backend.onrender.com/api/tron/send-usdt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amountInUSDT: inputValue,
+          address: adresswallet
+        }),
+      });
+      setIsOpen(false);
 
-        const data = await response.json();
 
-        if (response.ok) {
-            alert("Transfer successful!");
-        } else {
-            alert(`Error: ${data.message || "Something went wrong"}`);
-        }
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Transfer successful!");
+      } else {
+        alert(`Error: ${data.message || "Something went wrong"}`);
+      }
     } catch (error) {
-        console.error("API Error:", error);
-        alert("Failed to connect to the server.");
+      console.error("API Error:", error);
+      alert("Failed to connect to the server.");
     }
-};
+  };
 
 
   return (
@@ -372,6 +397,12 @@ const WalletDataDisplay = () => {
           </button>
 
         </div>
+        <button
+          onClick={handleLogout}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-25"
+        >
+          Logout
+        </button>
         <button
           onClick={handleConnectTron}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-25"
@@ -448,7 +479,7 @@ const WalletDataDisplay = () => {
       ) : (
         <>
           {/* Sub Account Table */}
-          <div className="overflow-x-auto max-h-150">
+          <div className="overflow-x-auto max-h-[550px]">
             <table className="min-w-full bg-white shadow-md rounded-lg">
               <thead className="bg-gray-200">
                 <tr>
@@ -459,12 +490,13 @@ const WalletDataDisplay = () => {
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Usdt-Balance</th>
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Import</th>
                   <th className="py-3 px-6 text-left font-semibold text-gray-700">Transfer To Main</th>
+                  <th className="py-3 px-6 text-left font-semibold text-gray-700">View History</th>
                 </tr>
               </thead>
               <tbody>
                 {subAccountDetails.map((account) => (
                   <tr
-                    key={account.id + 1}
+                    key={account.UID + 1}
                     ref={(el) => (rowRefs.current[account.UID] = el)}
                     className={`border ${highlightId === account?.UID ? "bg-yellow-200" : ""}`}
                   >
@@ -519,22 +551,27 @@ const WalletDataDisplay = () => {
 
                     <td className="py-4 px-6 border-b border-gray-200">
 
-                      <td className="border-gray-300 p-2 text-center gap-2">
-                        <div className='flex items-center justify-center space-x-4'>
-                          <button
-                            onClick={() => btnAdd(account?.USDTBalance, account?.address)}
-                            className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-90"
-                          >
-                            Add
-                          </button>
-                          <button
-                            onClick={() => setDropdownOpen(account.address)}
-                            className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </td>
+
+                      <div className='flex items-center justify-center space-x-4'>
+                        <button
+                          onClick={() => btnAdd(account?.USDTBalance, account?.address)}
+                          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-90"
+                        >
+                          Send
+                        </button>
+
+                      </div>
+
+
+
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => setDropdownOpen(account.address)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"
+                      >
+                        View
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -544,6 +581,8 @@ const WalletDataDisplay = () => {
         </>
       )}
 
+
+      {/* to copy private key for selectedAccount */}
       {selectedAccount && (
         <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-lg">
           <motion.div
@@ -591,34 +630,37 @@ const WalletDataDisplay = () => {
         </div>
       )}
 
+      {/* for transfer amount to main wallet from sub account */}
       {isOpen && (
+        <div className="absolute right-48 mt-70 transform -translate-x-1/2 p-6 rounded-lg shadow-lg w-80 border border-gray-300 
+                  bg-white bg-opacity-80 backdrop-blur-md transition-all duration-300 ease-out scale-95 opacity-0 
+                  animate-fadeInSlideUp">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Enter Amount</h2>
 
-        <div className="absolute right-48 mt-70 transform -translate-x-1/2 bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-lg shadow-lg w-80 border border-gray-300">
-          <h2 className="text-lg font-bold mb-4">Enter Amount</h2>
           <input
             type="text"
             placeholder="Enter Amount"
-            value={inputValue}
             onChange={(e) => {
               const value = Number(e.target.value);
-
               setInputValue(value);
-
             }}
-
-            className="w-full p-2 border border-gray-300 rounded-lg mb-4"
+            className="w-full p-3 border border-gray-300 rounded-lg mb-4 outline-none focus:ring-2 focus:ring-blue-400 
+                 transition-all duration-200"
           />
+
           <div className="flex space-x-4 w-full">
             <button
               onClick={() => transferAmount()}
-              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-all 
+                   transform hover:scale-105 active:scale-95 shadow-md"
             >
               Transfer to Main
             </button>
 
             <button
               onClick={() => cancelForm()}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-transform transform hover:scale-105"
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-all 
+                   transform hover:scale-105 active:scale-95 shadow-md"
             >
               Cancel
             </button>
@@ -626,7 +668,26 @@ const WalletDataDisplay = () => {
         </div>
       )}
 
+      <style>
+        {`
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 
+.animate-fadeInSlideUp {
+  animation: fadeInSlideUp 0.3s ease-out forwards;
+}
+`}
+      </style>
+
+      {/* for view transaction history of sub account */}
       {dropdownOpen && (
         <div>
           <div className="fixed top-44 right-8 w-80">
@@ -642,11 +703,6 @@ const WalletDataDisplay = () => {
                 {subAccountTransactions &&
                   (Array.isArray(subAccountTransactions)
                     ? subAccountTransactions?.map((trans, index) => (
-                      // <li key={index} className="flex justify-between items-center p-2 border-b">
-                      //   <span className="text-lg text-green-500">{trans.TXNtype == "sent" ? <MoveUpRight color='red'/> : <MoveDownLeft color='green'/>}</span>
-                      //   {trans.TXNtype == "sent" ? <span className='text-red-700'>-{trans.amount}</span> : <span className='text-green-700'>+{trans.amount}</span>} 
-                      //   {moment(trans.time).format('DD-MM-YY')}<span className='text-gray-600 font-bold text-xs'>{moment(trans.time).format('HH:mm')} IST</span>
-                      // </li>
                       <li
                         key={index}
                         className="flex justify-between items-center p-1 border-b border-gray-200 hover:bg-gray-50 transition-all duration-200"
@@ -689,17 +745,6 @@ const WalletDataDisplay = () => {
                         {trans.TXNtype == "sent" ? <span className='text-red-700'>-{trans.amount}</span> : <span className='text-green-700'>+{trans.amount}</span>}
                       </li>
                     )))}
-                {/* {subAccountTransactions && (<>
-                    {subAccountTransactions.map((trans) => {
-
-                  <li className="flex justify-between items-center p-2 border-b">
-                    <span className="text-lg text-green-500">{trans.TXNtype}⬆️</span>
-                    <span>Received from John</span>
-
-                  </li>
-                    })}
-                  </>)} */}
-
               </ul>
             </div>
           </div>
@@ -762,127 +807,15 @@ const WalletDataDisplay = () => {
               </button>
             </div>
           </form>
-
-
-
-
         </div>
       )}
 
-      {/* History of SubAccount */}
-      {isHistoryOpen && (<>
-        {/* <p>RadheKrishna</p> */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.3 }}
-          className={`fixed top-10 left-1/2 transform -translate-x-1/2 bg-white bg-opacity-90 backdrop-blur-lg p-8 rounded-xl shadow-xl w-[600px] border border-gray-300 z-50`}
-        >
-          <h2 className="text-2xl font-bold mb-4 text-center text-gray-900">Transaction History</h2>
-
-          {subAccountTransactions.length > 0 ? (
-            <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-300">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-200 text-gray-700">
-                    <th className="p-3"></th>
-                    <th className="p-3">Amount</th>
-                    <th className="p-3">TxID</th>
-                    <th className="p-3">Address</th>
-                    {/* <th className="p-3">To</th> */}
-                  </tr>
-                </thead>
-                <tbody>
-                  {subAccountTransactions.map((txn) => (
-                    <tr key={txn.txID} className="border-b border-gray-300 hover:bg-gray-100">
-                      <td
-                        className="p-3 cursor-pointer text-blue-600 hover:underline"
-                      >
-                        {txn.TXNtype === "sent" ? (
-                          <MoveUpRight color="red" />
-                        ) : (
-                          <MoveDownLeft color="green" />
-                        )}
-                      </td>
-                      <td className="p-3">{txn.amount}</td>
-                      <td
-                        className="p-3 cursor-pointer text-blue-600 hover:underline"
-                        onClick={() => setExpandedText(txn.txID)}
-                      >
-                        {txn.txID.substring(0, 12)}...
-                      </td>
-                      {txn.TXNtype === "sent" ? (
-                        <td
-                          className="p-3 cursor-pointer text-blue-600 hover:underline"
-                          onClick={() => setExpandedText(txn.toAd)}
-                        >
-                          {txn?.toAd?.substring(0, 12)}...
-                        </td>
-                      ) : (
-                        <td
-                          className="p-3 cursor-pointer text-blue-600 hover:underline"
-                          onClick={() => setExpandedText(txn.ownerAd)}
-                        >
-                          {txn?.ownerAd?.substring(0, 12)}...
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-center text-gray-500">No Transactions Found</p>
-          )}
-
-          <div className="flex justify-center mt-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setisHistoryOpen(false)
-                // setTransactions([]);
-                onClose();
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-transform"
-            >
-              Close
-            </motion.button>
-          </div>
-
-          {expandedText && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-              onClick={() => setExpandedText(null)}
-            >
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg text-center">
-                <p className="text-lg font-medium text-gray-800 break-all">{expandedText}</p>
-                <button
-                  className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                  onClick={() => setExpandedText(null)}
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
-      </>)}
+      {/* useronboarding for import wallet */}
       <PopupModal isOpen={isModalOpen} onClose={() => setModalOpen(false)}>
         <SliderImage />
       </PopupModal>
 
-
-      <TransactionHistoryModal
-        show={showTransactionModal}
-        onClose={() => setShowTransactionModal(false)}
-        walletAddress={selectedWallet}
-      />
-
+      {/*mainwallet Transaction History Modal */}
       <HistoryModel show={show} onClose={btnClose} walletAddress={mainwalletAddress} />
     </div>
   );
